@@ -8,6 +8,13 @@ import {
 } from "../interfaces/models/product.interface";
 import { VariantDocument } from "../interfaces/models/variant.interface";
 import { HttpException } from "../middlewares/error.middleware";
+import fs from "fs";
+import fetch from "node-fetch";
+import FormData from "form-data";
+
+interface RecognitionAPIResponse {
+  flower: string;
+}
 
 export class ProductService {
   public async createProduct(productData: IProduct): Promise<ProductDocument> {
@@ -69,6 +76,47 @@ export class ProductService {
     }
 
     return product.toObject<ProductDocument>();
+  }
+
+  public async getProductByImage(
+    file: Express.Multer.File
+  ): Promise<IProduct[]> {
+    const filePath = file.path;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", fs.createReadStream(filePath), {
+        filename: file.originalname,
+        contentType: file.mimetype,
+      });
+
+      const fastapiRes = await fetch("http://localhost:8000/predict", {
+        method: "POST",
+        body: formData,
+        headers: formData.getHeaders(),
+      });
+
+      if (!fastapiRes.ok) {
+        const errorData = await fastapiRes.text();
+        throw new Error(`FastAPI server error: ${errorData}`);
+      }
+
+      const result = await fastapiRes.json();
+      const data = result as RecognitionAPIResponse;
+      const flowerName = data.flower;
+
+      const products = await Product.find({
+        name: { $regex: flowerName, $options: "i" },
+      });
+
+      if (products.length === 0) {
+        throw new Error(`No product found for flower: ${flowerName}`);
+      }
+
+      return products;
+    } finally {
+      fs.unlinkSync(filePath);
+    }
   }
 
   public async getAllProducts(

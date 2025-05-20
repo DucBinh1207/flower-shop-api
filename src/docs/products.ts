@@ -280,6 +280,46 @@
  *       500:
  *         description: Server error
  *
+ * /products/image:
+ *   post:
+ *     summary: Predict product (flower) from image
+ *     tags: [Products]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file to identify flower
+ *     responses:
+ *       200:
+ *         description: Prediction result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     label:
+ *                       type: string
+ *                       example: hoa_ly
+ *                     confidence:
+ *                       type: number
+ *                       example: 0.95
+ *       400:
+ *         description: No file provided or invalid file
+ *       500:
+ *         description: Server error
+ *
  * /products/{id}/variants:
  *   get:
  *     summary: Get product with its variants

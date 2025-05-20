@@ -6,6 +6,7 @@ import {
   IOrder,
   OrderDocument,
   OrderStatus,
+  PaymentStatus,
 } from "../interfaces/models/order.interface";
 import { OrderItemDocument } from "../interfaces/models/order-item.interface";
 import { ProductDocument } from "../interfaces/models/product.interface";
@@ -107,18 +108,17 @@ export class OrderService {
     items: OrderItemDocument[];
   }> {
     // Find by id or _id based on type
+
     const order =
-      typeof orderId === "number"
-        ? await Order.findOne({ id: orderId })
+      typeof orderId === "string"
+        ? await Order.findOne({ orderId: orderId })
         : await Order.findById(orderId);
 
     if (!order) {
       throw new HttpException(404, "Order not found");
     }
-
     const orderObj = order.toObject<OrderDocument>();
     const items = await OrderItem.find({ orderId: orderObj.id });
-
     return {
       order: orderObj,
       items: items.map((item) => item.toObject<OrderItemDocument>()),
@@ -182,8 +182,8 @@ export class OrderService {
   ): Promise<OrderDocument> {
     // Find by id or _id based on type
     const order =
-      typeof orderId === "number"
-        ? await Order.findOne({ id: orderId })
+      typeof orderId === "string"
+        ? await Order.findOne({ orderId: orderId })
         : await Order.findById(orderId);
 
     if (!order) {
@@ -210,9 +210,9 @@ export class OrderService {
 
     // Update by numeric id if orderId is a number
     const updatedOrder =
-      typeof orderId === "number"
+      typeof orderId === "string"
         ? await Order.findOneAndUpdate(
-            { id: orderId },
+            { orderId: orderId },
             {
               status,
               updatedAt: new Date().toISOString(),
@@ -272,6 +272,47 @@ export class OrderService {
     typeof orderId === "number"
       ? await Order.findOneAndDelete({ id: orderId })
       : await Order.findByIdAndDelete(orderId);
+  }
+
+  public async updatePaymentStatus(
+    orderId: string | Types.ObjectId | number,
+    paymentStatus: PaymentStatus
+  ): Promise<OrderDocument> {
+    // Find by id or _id based on type
+    const order =
+      typeof orderId === "string"
+        ? await Order.findOne({ orderId: orderId })
+        : await Order.findById(orderId);
+
+    if (!order) {
+      throw new HttpException(404, "Order not found");
+    }
+
+    // Update by numeric id if orderId is a number
+    const updatedOrder =
+      typeof orderId === "string"
+        ? await Order.findOneAndUpdate(
+            { orderId: orderId },
+            {
+              paymentStatus,
+              updatedAt: new Date().toISOString(),
+            },
+            { new: true }
+          )
+        : await Order.findByIdAndUpdate(
+            orderId,
+            {
+              paymentStatus,
+              updatedAt: new Date().toISOString(),
+            },
+            { new: true }
+          );
+
+    if (!updatedOrder) {
+      throw new HttpException(404, "Order not found");
+    }
+
+    return updatedOrder.toObject<OrderDocument>();
   }
 }
 

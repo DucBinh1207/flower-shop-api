@@ -1,7 +1,6 @@
 import { Document } from "mongoose";
 
 export interface IProduct {
-  id?: string;
   name: string;
   slug: string;
   description: string;
@@ -26,7 +25,6 @@ export interface IProduct {
 }
 
 export interface ProductDocument extends IProduct, Document {
-  id: string;
 }
 
 // Adding this interface to match the front-end specification

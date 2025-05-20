@@ -115,8 +115,6 @@ export class OrderController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
 
-      console.log(req.user);
-
       const result = await orderService.getUserOrders(req.user.id, page, limit);
 
       res.status(200).json({
@@ -266,31 +264,21 @@ export class OrderController {
 
       const dataJson = JSON.parse(dataStr);
       const { app_trans_id, embed_data, app_id } = dataJson;
-      console.log({ app_trans_id });
 
       // Parse JSON string to object
       const parsedData = JSON.parse(embed_data);
       // Access id_order
       const id_order = parsedData.orderId;
-      console.log(id_order);
-      console.log({ app_id });
 
       const orderId = id_order;
       const status = "processing";
+      const paymentStatus = "paid";
 
-      const { order, items } = await orderService.getOrderById(orderId);
-      console.log({ order });
-      console.log({ items });
-      console.log("before update");
+      await orderService.updatePaymentStatus(orderId, paymentStatus);
       const updatedOrder = await orderService.updateOrderStatus(
         orderId,
         status
       );
-      console.log("after update");
-
-      if (updatedOrder) console.log(updatedOrder);
-      else console.log({ status });
-      console.log("Done ???");
 
       res.status(200).json({
         status: "success",
@@ -301,8 +289,6 @@ export class OrderController {
     } catch (error) {
       result.return_message = error.message;
     }
-
-    res.json(result);
   };
 }
 
