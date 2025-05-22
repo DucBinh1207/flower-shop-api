@@ -1,7 +1,6 @@
 import { Document } from "mongoose";
 
 export interface IComment {
-  id?: number;
   productId: number;
   userId: String;
   userName: string;
@@ -11,6 +10,4 @@ export interface IComment {
   createdAt: string;
 }
 
-export interface CommentDocument extends IComment, Document {
-  id: number;
-}
+export interface CommentDocument extends IComment, Document {}

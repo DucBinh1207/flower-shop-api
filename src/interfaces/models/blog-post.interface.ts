@@ -1,7 +1,6 @@
 import { Document } from "mongoose";
 
 export interface IBlogPost {
-  id?: number;
   title: string;
   slug: string;
   excerpt: string;
@@ -13,6 +12,4 @@ export interface IBlogPost {
   tags: string[];
 }
 
-export interface BlogPostDocument extends IBlogPost, Document {
-  id: number;
-}
+export interface BlogPostDocument extends IBlogPost, Document {}

@@ -28,7 +28,7 @@ export class CategoryController {
   public getAllCategories = async (
     req: Request,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -38,7 +38,7 @@ export class CategoryController {
       const result = await categoryService.getAllCategories(
         page,
         limit,
-        search,
+        search
       );
 
       res.status(200).json({
@@ -58,7 +58,7 @@ export class CategoryController {
   public getCategoryById = async (
     req: Request,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void> => {
     try {
       const categoryId = req.params.id;
@@ -81,7 +81,7 @@ export class CategoryController {
   public getCategoryBySlug = async (
     req: Request,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void> => {
     try {
       const slug = req.params.slug;
@@ -104,12 +104,10 @@ export class CategoryController {
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       try {
         const categoryId = req.params.id;
-        // Convert string ID to number if it's a number
-        const id = !isNaN(Number(categoryId)) ? Number(categoryId) : categoryId;
 
         const updatedCategory = await categoryService.updateCategory(
-          id,
-          req.body,
+          categoryId,
+          req.body
         );
 
         res.status(200).json({
@@ -127,7 +125,7 @@ export class CategoryController {
   public deleteCategory = async (
     req: Request,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void> => {
     try {
       const categoryId = req.params.id;

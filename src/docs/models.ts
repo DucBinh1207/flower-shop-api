@@ -125,7 +125,7 @@
  *         seedCount: 50
  *         howToPlant: "Plant seeds 1/2 inch deep in full sun. Water regularly."
  *         createdAt: "2023-03-15T08:30:00Z"
- *           
+ *
  *     Variant:
  *       type: object
  *       required:

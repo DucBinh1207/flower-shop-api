@@ -24,8 +24,7 @@ export interface IProduct {
   updatedAt?: string;
 }
 
-export interface ProductDocument extends IProduct, Document {
-}
+export interface ProductDocument extends IProduct, Document {}
 
 // Adding this interface to match the front-end specification
 export interface Product {

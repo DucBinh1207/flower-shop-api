@@ -224,10 +224,11 @@ export class ProductController {
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       try {
         const productId = req.params.id;
-        // Convert string ID to number if it's a number
-        const id = !isNaN(Number(productId)) ? Number(productId) : productId;
 
-        const updatedProduct = await productService.updateProduct(id, req.body);
+        const updatedProduct = await productService.updateProduct(
+          productId,
+          req.body
+        );
 
         res.status(200).json({
           status: "success",
@@ -248,10 +249,8 @@ export class ProductController {
   ): Promise<void> => {
     try {
       const productId = req.params.id;
-      // Convert string ID to number if it's a number
-      const id = !isNaN(Number(productId)) ? Number(productId) : productId;
 
-      await productService.deleteProduct(id);
+      await productService.deleteProduct(productId);
 
       res.status(200).json({
         status: "success",

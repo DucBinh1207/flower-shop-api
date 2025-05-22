@@ -122,7 +122,6 @@ const productSchema = new Schema(
 );
 
 // Indexes
-productSchema.index({ id: 1 }, { unique: true });
 productSchema.index({ slug: 1 }, { unique: true });
 productSchema.index({
   name: "text",
@@ -135,17 +134,6 @@ productSchema.index({ price: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ isBestSeller: 1 });
 productSchema.index({ isNew: 1 });
-
-// Auto-increment ID plugin
-productSchema.pre("save", async function (next) {
-  const doc = this as any;
-  if (!doc.id) {
-    // @ts-ignore
-    const lastProduct = await Product.findOne().sort({ id: -1 }).limit(1);
-    doc.id = lastProduct ? lastProduct.id + 1 : 1;
-  }
-  next();
-});
 
 // @ts-ignore
 const Product = model<ProductDocument>("Product", productSchema);

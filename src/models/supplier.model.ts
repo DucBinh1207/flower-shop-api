@@ -3,12 +3,6 @@ import { SupplierDocument } from "../interfaces/models/supplier.interface";
 
 const SupplierSchema = new Schema(
   {
-    id: {
-      type: Number,
-      required: true,
-      unique: true,
-      index: true,
-    },
     name: {
       type: String,
       required: true,

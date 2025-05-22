@@ -53,20 +53,8 @@ const categorySchema = new Schema<ICategory>(
 );
 
 // Indexes
-categorySchema.index({ id: 1 }, { unique: true });
 categorySchema.index({ slug: 1 }, { unique: true });
 categorySchema.index({ name: "text", description: "text" });
-
-// Auto-increment ID plugin
-categorySchema.pre("save", async function (next) {
-  const doc = this as any;
-  if (!doc.id) {
-    // @ts-ignore
-    const lastCategory = await Category.findOne().sort({ id: -1 }).limit(1);
-    doc.id = lastCategory ? lastCategory.id + 1 : 1;
-  }
-  next();
-});
 
 // @ts-ignore
 const Category = model<ICategory>("Category", categorySchema);

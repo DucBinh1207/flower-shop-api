@@ -1,7 +1,6 @@
-import { Document } from 'mongoose';
+import { Document } from "mongoose";
 
 export interface IVariant {
-  id?: number;
   productId: number;
   size: string;
   variant: string;
@@ -11,13 +10,10 @@ export interface IVariant {
   updatedAt?: string;
 }
 
-export interface VariantDocument extends IVariant, Document {
-  id: number;
-}
+export interface VariantDocument extends IVariant, Document {}
 
 // Adding this to match the product types in specification
 export interface Variant {
-  id: number;
   productId: number;
   size: string;
   variant: string;

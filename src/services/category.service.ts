@@ -85,44 +85,30 @@ export class CategoryService {
   }
 
   public async updateCategory(
-    categoryId: string | Types.ObjectId | number,
+    categoryId: string | Types.ObjectId,
     categoryData: Partial<ICategory>
   ): Promise<CategoryDocument> {
-    // Find category by id or _id based on type
-    const category =
-      typeof categoryId === "number"
-        ? await Category.findOne({ id: categoryId })
-        : await Category.findById(categoryId);
-
-    if (!category) {
-      throw new HttpException(404, "Category not found");
+    if (!Types.ObjectId.isValid(categoryId)) {
+      throw new HttpException(400, "Invalid category ID");
     }
 
-    const categoryObj = category.toObject<CategoryDocument>();
+    if (categoryData.slug) {
+      const existing = await Category.findOne({
+        slug: categoryData.slug,
+        _id: { $ne: categoryId },
+      });
 
-    // Check if slug exists (if trying to update slug)
-    if (categoryData.slug && categoryData.slug !== categoryObj.slug) {
-      const searchQuery =
-        typeof categoryId === "number"
-          ? { slug: categoryData.slug, id: { $ne: categoryId } }
-          : { slug: categoryData.slug, _id: { $ne: categoryId } };
-
-      const existingCategory = await Category.findOne(searchQuery);
-
-      if (existingCategory) {
+      if (existing) {
         throw new HttpException(409, "Category with this slug already exists");
       }
     }
 
-    // Update by numeric id if categoryId is a number
-    const updatedCategory =
-      typeof categoryId === "number"
-        ? await Category.findOneAndUpdate({ id: categoryId }, categoryData, {
-            new: true,
-          })
-        : await Category.findByIdAndUpdate(categoryId, categoryData, {
-            new: true,
-          });
+    // Cập nhật category
+    const updatedCategory = await Category.findByIdAndUpdate(
+      categoryId,
+      categoryData,
+      { new: true }
+    );
 
     if (!updatedCategory) {
       throw new HttpException(404, "Category not found");

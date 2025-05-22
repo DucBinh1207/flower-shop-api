@@ -194,26 +194,20 @@ export class ProductService {
   }
 
   public async updateProduct(
-    productId: string | Types.ObjectId | number,
+    productId: string | Types.ObjectId,
     productData: Partial<IProduct>
   ): Promise<ProductDocument> {
-    // Find product by id or _id based on type
-    const product =
-      typeof productId === "number"
-        ? await Product.findOne({ id: productId })
-        : await Product.findById(productId);
-
+    const product = await Product.findById(productId);
     if (!product) {
       throw new HttpException(404, "Product not found");
     }
 
     const productObj = product.toObject<ProductDocument>();
 
-    // Check if slug exists (if trying to update slug)
     if (productData.slug && productData.slug !== productObj.slug) {
       const existingProduct = await Product.findOne({
         slug: productData.slug,
-        id: { $ne: productObj.id }, // Use numeric id for comparison
+        _id: { $ne: product._id },
       });
 
       if (existingProduct) {
@@ -221,56 +215,42 @@ export class ProductService {
       }
     }
 
-    // Check if category exists (if trying to update category)
     if (
       productData.categoryId &&
-      productObj.categoryId !== productData.categoryId
+      productObj.categoryId.toString() !== productData.categoryId.toString()
     ) {
-      // Check if category exists by numeric id
-      const category = await Category.findOne({ id: productData.categoryId });
-
+      const category = await Category.findById(productData.categoryId);
       if (!category) {
         throw new HttpException(404, "Category not found");
       }
 
-      // Update product counts in both old and new categories
       await Promise.all([
-        Category.findOneAndUpdate(
-          { id: productObj.categoryId },
-          { $inc: { productCount: -1 } }
-        ),
-        Category.findOneAndUpdate(
-          { id: productData.categoryId },
-          { $inc: { productCount: 1 } }
-        ),
+        Category.findByIdAndUpdate(productObj.categoryId, {
+          $inc: { productCount: -1 },
+        }),
+        Category.findByIdAndUpdate(productData.categoryId, {
+          $inc: { productCount: 1 },
+        }),
       ]);
     }
 
-    // Update by numeric id if productId is a number
-    const updatedProduct =
-      typeof productId === "number"
-        ? await Product.findOneAndUpdate({ id: productId }, productData, {
-            new: true,
-          }).populate("categoryId", "name slug")
-        : await Product.findByIdAndUpdate(productId, productData, {
-            new: true,
-          }).populate("categoryId", "name slug");
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      productData,
+      { new: true }
+    ).populate("categoryId", "name slug");
 
     if (!updatedProduct) {
-      throw new HttpException(404, "Product not found");
+      throw new HttpException(404, "Product not found after update");
     }
 
     return updatedProduct.toObject<ProductDocument>();
   }
 
   public async deleteProduct(
-    productId: string | Types.ObjectId | number
+    productId: string | Types.ObjectId
   ): Promise<void> {
-    // Find product by id or _id based on type
-    const product =
-      typeof productId === "number"
-        ? await Product.findOne({ id: productId })
-        : await Product.findById(productId);
+    const product = await Product.findById(productId);
 
     if (!product) {
       throw new HttpException(404, "Product not found");
@@ -278,19 +258,14 @@ export class ProductService {
 
     const productObj = product.toObject<ProductDocument>();
 
-    // Update product count in category
     await Category.findOneAndUpdate(
-      { id: productObj.categoryId },
+      { _id: productObj.categoryId },
       { $inc: { productCount: -1 } }
     );
 
-    // Delete associated variants
-    await Variant.deleteMany({ productId: productObj.id });
+    await Variant.deleteMany({ productId: productObj._id });
 
-    // Delete the product
-    typeof productId === "number"
-      ? await Product.findOneAndDelete({ id: productId })
-      : await Product.findByIdAndDelete(productId);
+    await Product.findByIdAndDelete(productId);
   }
 
   /**

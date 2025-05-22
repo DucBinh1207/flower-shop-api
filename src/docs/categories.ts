@@ -165,8 +165,8 @@
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Category ID
+ *           type: string
+ *         description: MongoDB ObjectId of the category
  *     requestBody:
  *       required: true
  *       content:

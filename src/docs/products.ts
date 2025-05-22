@@ -176,8 +176,9 @@
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Product ID
+ *           type: string
+ *           pattern: '^[a-f\d]{24}$'
+ *         description: Product ID (MongoDB ObjectId)
  *     requestBody:
  *       required: true
  *       content:
@@ -212,6 +213,7 @@
  *         description: Product with this slug already exists
  *       500:
  *         description: Server error
+
  *
  *   delete:
  *     summary: Delete a product

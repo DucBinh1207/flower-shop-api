@@ -1,7 +1,6 @@
 import { Document } from "mongoose";
 
 export interface ICategory {
-  id?: number;
   name: string;
   slug: string;
   description: string;
@@ -9,6 +8,4 @@ export interface ICategory {
   productCount: number;
 }
 
-export interface CategoryDocument extends ICategory, Document {
-  id: number;
-}
+export interface CategoryDocument extends ICategory, Document {}
