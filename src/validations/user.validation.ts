@@ -27,3 +27,7 @@ export const loginSchema = Joi.object({
   email: Joi.string().required(),
   password: Joi.string().required(),
 });
+
+export const updateUserStatusSchema = Joi.object({
+  status: Joi.string().valid("active", "inactive").required(),
+});

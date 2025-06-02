@@ -52,18 +52,4 @@ const SupplierSchema = new Schema(
   }
 );
 
-// Set up Counter sequence for auto-incrementing ID
-SupplierSchema.pre("save", async function (next) {
-  if (this.isNew) {
-    const Counter = model("Counter");
-    const counter = await Counter.findOneAndUpdate(
-      { name: "supplier" },
-      { $inc: { seq: 1 } },
-      { new: true, upsert: true }
-    );
-    this.id = counter.seq;
-  }
-  next();
-});
-
 export default model<SupplierDocument>("Supplier", SupplierSchema);

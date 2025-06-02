@@ -7,9 +7,9 @@ export interface IUser {
   phone: string;
   address: string;
   avatar: string;
+  status: "active" | "inactive";
   role: "admin" | "customer";
   createdAt: string;
 }
 
 export interface UserDocument extends IUser, Document {}
-

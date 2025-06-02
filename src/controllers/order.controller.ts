@@ -140,13 +140,19 @@ export class OrderController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const status = req.query.status as any;
+      const customerPhone = req.query.customerPhone as string | undefined;
 
-      const result = await orderService.getAllOrders(page, limit, status);
+      const result = await orderService.getAllOrders(
+        page,
+        limit,
+        status,
+        customerPhone
+      );
 
       res.status(200).json({
         status: "success",
         data: {
-          orders: result.orders,
+          data: result.orders,
           totalCount: result.totalCount,
           totalPages: result.totalPages,
           currentPage: page,
@@ -168,30 +174,14 @@ export class OrderController {
           throw new HttpException(401, "Authentication required");
         }
 
-        // Get the order first to check ownership
+        // Lấy đơn hàng để kiểm tra quyền
         const { order } = await orderService.getOrderById(orderId);
 
-        // Handle both numeric IDs and MongoDB ObjectIds
-        let userIdMatches = false;
-        if (
-          typeof order.userId === "number" &&
-          typeof req.user.id === "number"
-        ) {
-          userIdMatches = order.userId === req.user.id;
-        } else if (typeof order.userId === "object" && order.userId) {
-          const userId = order.userId as any; // Use type assertion to bypass TypeScript restrictions
-          if (typeof userId.equals === "function") {
-            userIdMatches = userId.equals(req.user.id);
-          }
-        } else if (String(order.userId) === String(req.user.id)) {
-          userIdMatches = true;
-        }
+        const isOwner = String(order.userId) === String(req.user.id);
+        const isAdmin = req.user.role === "admin";
 
-        // Only admins can update order status (except for cancellation)
-        if (
-          req.user.role !== "admin" &&
-          !(status === "cancelled" && userIdMatches)
-        ) {
+        // Cho phép: admin hoặc chủ đơn muốn huỷ
+        if (!isAdmin && !(status === "cancelled" && isOwner)) {
           throw new HttpException(
             403,
             "You do not have permission to update this order"
@@ -206,7 +196,7 @@ export class OrderController {
         res.status(200).json({
           status: "success",
           data: {
-            order: updatedOrder,
+            data: updatedOrder,
           },
         });
       } catch (error) {

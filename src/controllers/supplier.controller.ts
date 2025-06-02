@@ -97,10 +97,12 @@ export class SupplierController {
       try {
         const supplierId = req.params.id;
         const supplierData = req.body;
+
         const updatedSupplier = await this.supplierService.updateSupplier(
           supplierId,
           supplierData
         );
+
         res.status(200).json({
           success: true,
           data: updatedSupplier.toObject(),

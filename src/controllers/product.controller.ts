@@ -141,57 +141,6 @@ export class ProductController {
     }
   };
 
-  // public getProductByImage = async (
-  //   req: Request,
-  //   res: Response,
-  //   next: NextFunction
-  // ): Promise<void> => {
-  //   try {
-  //     const file = (req as MulterRequest).file;
-
-  //     if (!file) {
-  //       res.status(400).json({
-  //         status: "fail",
-  //         message: "No image uploaded",
-  //       });
-  //       return;
-  //     }
-
-  //     const filePath = file.path;
-
-  //     // Tạo FormData để gửi sang FastAPI
-  //     const formData = new FormData();
-  //     formData.append("file", fs.createReadStream(filePath), {
-  //       filename: file.originalname,
-  //       contentType: file.mimetype,
-  //     });
-
-  //     // Gửi yêu cầu POST tới FastAPI
-  //     const fastapiRes = await fetch("http://localhost:8000/predict", {
-  //       method: "POST",
-  //       body: formData,
-  //       headers: formData.getHeaders(),
-  //     });
-
-  //     if (!fastapiRes.ok) {
-  //       const errorData = await fastapiRes.text();
-  //       throw new Error(`FastAPI server error: ${errorData}`);
-  //     }
-
-  //     const result = await fastapiRes.json();
-
-  //     // Sau khi xử lý xong, xóa file tạm
-  //     fs.unlinkSync(filePath);
-
-  //     res.status(200).json({
-  //       status: "success",
-  //       data: result,
-  //     });
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
-
   public getProductByImage = async (
     req: Request,
     res: Response,

@@ -255,4 +255,51 @@
  *         description: User not found
  *       500:
  *         description: Server error
+ *
+ * /users/{id}/status:
+ *   put:
+ *     summary: Update user's status (Admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the user to update
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive]
+ *                 example: active
+ *     responses:
+ *       200:
+ *         description: User status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: User status updated successfully
+ *       400:
+ *         description: Invalid status value
+ *       403:
+ *         description: Only admin can update user status
+ *       404:
+ *         description: User not found
  */

@@ -1,9 +1,14 @@
-import dayjs from "dayjs";
 import Order from "../models/order.model";
 import User from "../models/user.model";
 import Product from "../models/product.model";
 import Category from "../models/category.model";
 import { OrderDocument } from "interfaces/models";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export class DashboardService {
   public async getOrderCount(): Promise<{
@@ -23,24 +28,32 @@ export class DashboardService {
     totalIncome: number;
     currentMonthIncome: number;
   }> {
-    const allOrders = await Order.find({ status: "completed" });
+    const allOrders = await Order.find({ status: "delivered" });
+
     const totalIncome = allOrders.reduce(
       (sum, order) => sum + (order.total || 0),
       0
     );
 
-    // Khoảng thời gian của tháng hiện tại
-    const startOfMonth = dayjs().startOf("month").toDate();
-    const endOfMonth = dayjs().endOf("month").toDate();
+    const startOfMonth = dayjs()
+      .tz("Asia/Ho_Chi_Minh")
+      .startOf("month")
+      .toISOString();
 
-    // Tổng thu nhập của riêng tháng hiện tại
+    const endOfMonth = dayjs()
+      .tz("Asia/Ho_Chi_Minh")
+      .endOf("month")
+      .toISOString();
+
     const monthlyOrders = await Order.find({
-      status: "completed",
+      status: "delivered",
       createdAt: {
         $gte: startOfMonth,
         $lte: endOfMonth,
       },
     });
+
+    console.log({ monthlyOrders });
 
     const currentMonthIncome = monthlyOrders.reduce(
       (sum, order) => sum + (order.total || 0),
@@ -75,7 +88,7 @@ export class DashboardService {
     const totalProduct = await Product.countDocuments();
     const totalCategory = await Category.countDocuments();
 
-    const completedOrders = await Order.countDocuments({ status: "completed" });
+    const completedOrders = await Order.countDocuments({ status: "delivered" });
     const totalOrders = await Order.countDocuments();
     const orderCompletionRate =
       totalOrders === 0 ? 0 : completedOrders / totalOrders;

@@ -33,6 +33,11 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
     },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
     role: {
       type: String,
       enum: ["admin", "customer"],

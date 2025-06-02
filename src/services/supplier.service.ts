@@ -1,13 +1,18 @@
-import { Types } from 'mongoose';
-import { Supplier } from '../models';
-import { ISupplier, SupplierDocument } from '../interfaces/models/supplier.interface';
-import { HttpException } from '../middlewares/error.middleware';
+import { Types } from "mongoose";
+import { Supplier } from "../models";
+import {
+  ISupplier,
+  SupplierDocument,
+} from "../interfaces/models/supplier.interface";
+import { HttpException } from "../middlewares/error.middleware";
 
 export class SupplierService {
   /**
    * Create a new supplier
    */
-  public async createSupplier(supplierData: ISupplier): Promise<SupplierDocument> {
+  public async createSupplier(
+    supplierData: ISupplier
+  ): Promise<SupplierDocument> {
     try {
       const createdSupplier = await Supplier.create({
         ...supplierData,
@@ -16,18 +21,23 @@ export class SupplierService {
       });
       return createdSupplier;
     } catch (error) {
-      throw new HttpException(500, `Failed to create supplier: ${error.message}`);
+      throw new HttpException(
+        500,
+        `Failed to create supplier: ${error.message}`
+      );
     }
   }
 
   /**
    * Get supplier by ID
    */
-  public async getSupplierById(supplierId: string | Types.ObjectId | number): Promise<SupplierDocument> {
+  public async getSupplierById(
+    supplierId: string | Types.ObjectId | number
+  ): Promise<SupplierDocument> {
     try {
       const supplier = await Supplier.findOne({ id: Number(supplierId) });
       if (!supplier) {
-        throw new HttpException(404, 'Supplier not found');
+        throw new HttpException(404, "Supplier not found");
       }
       return supplier;
     } catch (error) {
@@ -42,10 +52,15 @@ export class SupplierService {
   public async getAllSuppliers(
     page: number = 1,
     limit: number = 10,
-    status?: 'active' | 'inactive'
-  ): Promise<{ suppliers: SupplierDocument[]; total: number; page: number; totalPages: number }> {
+    status?: "active" | "inactive"
+  ): Promise<{
+    suppliers: SupplierDocument[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     const skip = (page - 1) * limit;
-    
+
     let query = {};
     if (status) {
       query = { status };
@@ -72,53 +87,70 @@ export class SupplierService {
   /**
    * Update supplier
    */
+
   public async updateSupplier(
-    supplierId: string | Types.ObjectId | number,
+    supplierId: string,
     supplierData: Partial<ISupplier>
   ): Promise<SupplierDocument> {
     try {
-      const supplier = await Supplier.findOne({ id: Number(supplierId) });
-      if (!supplier) {
-        throw new HttpException(404, 'Supplier not found');
+      // Validate ObjectId
+      if (!Types.ObjectId.isValid(supplierId)) {
+        throw new HttpException(400, "Invalid supplier ID");
       }
 
-      const updatedSupplier = await Supplier.findOneAndUpdate(
-        { id: Number(supplierId) },
+      const supplier = await Supplier.findById(supplierId);
+      if (!supplier) {
+        throw new HttpException(404, "Supplier not found");
+      }
+
+      // Update
+      const updatedSupplier = await Supplier.findByIdAndUpdate(
+        supplierId,
         {
           ...supplierData,
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         },
         { new: true }
       );
 
       if (!updatedSupplier) {
-        throw new HttpException(500, 'Failed to update supplier');
+        throw new HttpException(500, "Failed to update supplier");
       }
 
       return updatedSupplier;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new HttpException(500, `Failed to update supplier: ${error.message}`);
+      throw new HttpException(
+        500,
+        `Failed to update supplier: ${error.message}`
+      );
     }
   }
 
   /**
    * Delete supplier
    */
-  public async deleteSupplier(supplierId: string | Types.ObjectId | number): Promise<void> {
+  public async deleteSupplier(supplierId: string): Promise<void> {
     try {
-      const supplier = await Supplier.findOne({ id: Number(supplierId) });
-      if (!supplier) {
-        throw new HttpException(404, 'Supplier not found');
+      if (!Types.ObjectId.isValid(supplierId)) {
+        throw new HttpException(400, "Invalid supplier ID");
       }
 
-      const deleteResult = await Supplier.deleteOne({ id: Number(supplierId) });
+      const supplier = await Supplier.findById(supplierId);
+      if (!supplier) {
+        throw new HttpException(404, "Supplier not found");
+      }
+
+      const deleteResult = await Supplier.deleteOne({ _id: supplierId });
       if (deleteResult.deletedCount === 0) {
-        throw new HttpException(500, 'Failed to delete supplier');
+        throw new HttpException(500, "Failed to delete supplier");
       }
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new HttpException(500, `Failed to delete supplier: ${error.message}`);
+      throw new HttpException(
+        500,
+        `Failed to delete supplier: ${error.message}`
+      );
     }
   }
 }

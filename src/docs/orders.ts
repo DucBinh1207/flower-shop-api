@@ -6,6 +6,7 @@
  */
 
 /**
+/**
  * @swagger
  * /orders:
  *   get:
@@ -33,32 +34,10 @@
  *           enum: [pending, processing, shipped, delivered, cancelled]
  *         description: Filter by order status
  *       - in: query
- *         name: userId
- *         schema:
- *           type: integer
- *         description: Filter by user ID (admin only)
- *       - in: query
- *         name: startDate
+ *         name: customerPhone
  *         schema:
  *           type: string
- *           format: date
- *         description: Filter by start date (YYYY-MM-DD)
- *       - in: query
- *         name: endDate
- *         schema:
- *           type: string
- *           format: date
- *         description: Filter by end date (YYYY-MM-DD)
- *       - in: query
- *         name: minTotal
- *         schema:
- *           type: number
- *         description: Filter by minimum total amount
- *       - in: query
- *         name: maxTotal
- *         schema:
- *           type: number
- *         description: Filter by maximum total amount
+ *         description: Filter by customer phone number (supports partial match)
  *     responses:
  *       200:
  *         description: A list of orders
@@ -220,7 +199,7 @@
  *         description: Server error
  *
  *   put:
- *     summary: Update an order (Admin only)
+ *     summary: Update an order's status (Admin only or Owner to cancel)
  *     tags: [Orders]
  *     security:
  *       - bearerAuth: []
@@ -229,8 +208,8 @@
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Order ID
+ *           type: string
+ *         description: MongoDB ObjectId of the order
  *     requestBody:
  *       required: true
  *       content:
@@ -242,24 +221,10 @@
  *                 type: string
  *                 enum: [pending, processing, shipped, delivered, cancelled]
  *                 description: Order status
- *                 example: "shipped"
- *               paymentStatus:
- *                 type: string
- *                 enum: [pending, paid, failed]
- *                 description: Payment status
- *                 example: "paid"
- *               shippingFee:
- *                 type: number
- *                 description: Shipping fee
- *                 example: 5.00
- *               discount:
- *                 type: number
- *                 description: Discount amount
- *                 example: 10.00
- *               notes:
- *                 type: string
- *                 description: Order notes
- *                 example: "Customer contacted about delivery"
+ *                 example: shipped
+ *             required:
+ *               - status
+ *
  *     responses:
  *       200:
  *         description: Order updated successfully
@@ -281,7 +246,7 @@
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden - Admin only
+ *         description: Forbidden - Admin only or not owner
  *       404:
  *         description: Order not found
  *       500:
@@ -522,4 +487,59 @@
  *         description: Forbidden - Admin only
  *       500:
  *         description: Server error
+ * /orders/{id}/status:
+ *   put:
+ *     summary: Update an order's status (Admin only or Owner to cancel)
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MongoDB ObjectId of the order
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, processing, shipped, delivered, cancelled]
+ *                 description: Order status
+ *                 example: shipped
+ *             required:
+ *               - status
+ *
+ *     responses:
+ *       200:
+ *         description: Order updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     order:
+ *                       $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin only or not owner
+ *       404:
+ *         description: Order not found
+ *       500:
+ *         description: Server error
+ *
  */

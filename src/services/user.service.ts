@@ -75,14 +75,25 @@ export class UserService {
   public async getAllUsers(
     page: number = 1,
     limit: number = 10,
-    role?: string
+    role?: string,
+    search?: string
   ): Promise<{
     users: UserDocument[];
     totalCount: number;
     totalPages: number;
   }> {
-    const query = role ? { role } : {};
     const skip = (page - 1) * limit;
+
+    const query: any = {};
+
+    if (role) {
+      query.role = role;
+    }
+
+    if (search) {
+      const regex = new RegExp(search, "i"); // case-insensitive
+      query.$or = [{ name: regex }, { email: regex }];
+    }
 
     const [users, totalCount] = await Promise.all([
       User.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }),
@@ -170,6 +181,19 @@ export class UserService {
     if (!result) {
       throw new HttpException(404, "User not found");
     }
+  }
+
+  public async updateStatus(
+    userId: string | Types.ObjectId | number,
+    status: "active" | "inactive"
+  ): Promise<void> {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new HttpException(404, "User not found");
+    }
+
+    await User.findByIdAndUpdate(userId, { status });
   }
 }
 

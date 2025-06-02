@@ -11,39 +11,40 @@ import { HttpException } from "../middlewares/error.middleware";
 import fs from "fs";
 import fetch from "node-fetch";
 import FormData from "form-data";
+import axios from "axios";
 
 interface RecognitionAPIResponse {
-  flower: string;
+  label: string;
+  name: string;
 }
 
 export class ProductService {
   public async createProduct(productData: IProduct): Promise<ProductDocument> {
-    // Check if slug exists
     const existingProduct = await Product.findOne({ slug: productData.slug });
     if (existingProduct) {
       throw new HttpException(409, "Product with this slug already exists");
     }
 
-    // Check if category exists by numeric id
     const category = await Category.findById(productData.categoryId);
     if (!category) {
       throw new HttpException(404, "Category not found");
     }
-    let newProduct: ProductDocument;
+
     try {
       const newProduct = await Product.create(productData);
-      // Update product count in category
-      await Category.findOneAndUpdate(
-        { id: productData.categoryId },
-        { $inc: { productCount: 1 } }
-      );
+
+      await Category.findByIdAndUpdate(productData.categoryId, {
+        $inc: { productCount: 1 },
+      });
 
       return newProduct.toObject<ProductDocument>();
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      throw new HttpException(
+        500,
+        `Failed to create product: ${error.message}`
+      );
     }
-
-    return newProduct.toObject<ProductDocument>();
   }
 
   public async getProductById(
@@ -90,20 +91,22 @@ export class ProductService {
         contentType: file.mimetype,
       });
 
-      const fastapiRes = await fetch("http://localhost:8000/predict", {
-        method: "POST",
-        body: formData,
-        headers: formData.getHeaders(),
-      });
+      const fastapiRes = await axios.post(
+        "https://flower-recognition-api.onrender.com/predict",
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+          },
+        }
+      );
 
-      if (!fastapiRes.ok) {
-        const errorData = await fastapiRes.text();
-        throw new Error(`FastAPI server error: ${errorData}`);
+      const data = fastapiRes.data as RecognitionAPIResponse;
+      const flowerName = data.name;
+
+      if (!flowerName || typeof flowerName !== "string") {
+        throw new Error(`Invalid flowerName: ${flowerName}`);
       }
-
-      const result = await fastapiRes.json();
-      const data = result as RecognitionAPIResponse;
-      const flowerName = data.flower;
 
       const products = await Product.find({
         name: { $regex: flowerName, $options: "i" },
@@ -135,8 +138,6 @@ export class ProductService {
     if (filters.categoryId) {
       query.categoryId = new mongoose.Types.ObjectId(filters.categoryId);
     }
-
-    console.log(query);
 
     if (filters.supplierId) {
       query.supplierId = filters.supplierId;
@@ -250,22 +251,29 @@ export class ProductService {
   public async deleteProduct(
     productId: string | Types.ObjectId
   ): Promise<void> {
-    const product = await Product.findById(productId);
+    try {
+      const product = await Product.findById(productId);
+      if (!product) {
+        throw new HttpException(404, "Product not found");
+      }
 
-    if (!product) {
-      throw new HttpException(404, "Product not found");
+      const productObj = product.toObject<ProductDocument>();
+
+      await Category.findByIdAndUpdate(productObj.categoryId, {
+        $inc: { productCount: -1 },
+      });
+
+      await Variant.deleteMany({ productId: productObj._id });
+
+      await Product.findByIdAndDelete(productId);
+    } catch (error) {
+      throw new HttpException(
+        500,
+        `Failed to delete product: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
-
-    const productObj = product.toObject<ProductDocument>();
-
-    await Category.findOneAndUpdate(
-      { _id: productObj.categoryId },
-      { $inc: { productCount: -1 } }
-    );
-
-    await Variant.deleteMany({ productId: productObj._id });
-
-    await Product.findByIdAndDelete(productId);
   }
 
   /**

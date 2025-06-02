@@ -107,18 +107,33 @@ export class OrderService {
     order: OrderDocument;
     items: OrderItemDocument[];
   }> {
-    // Find by id or _id based on type
+    let order: OrderDocument | null = null;
 
-    const order =
-      typeof orderId === "string"
-        ? await Order.findOne({ orderId: orderId })
-        : await Order.findById(orderId);
+    if (typeof orderId === "string") {
+      // Kiểm tra xem string có phải ObjectId hợp lệ không
+      if (Types.ObjectId.isValid(orderId)) {
+        order = await Order.findById(orderId);
+      } else {
+        // Nếu không phải ObjectId, tìm theo trường orderId (nếu bạn có trường này trong schema)
+        order = await Order.findOne({ orderId: orderId });
+      }
+    } else if (typeof orderId === "number") {
+      // Nếu orderId là số, tìm theo trường orderId
+      order = await Order.findOne({ orderId: orderId });
+    } else {
+      // Nếu là ObjectId
+      order = await Order.findById(orderId);
+    }
 
     if (!order) {
       throw new HttpException(404, "Order not found");
     }
+
     const orderObj = order.toObject<OrderDocument>();
-    const items = await OrderItem.find({ orderId: orderObj.id });
+
+    // Tìm các item dựa trên order._id (Mongo ObjectId)
+    const items = await OrderItem.find({ orderId: order._id });
+
     return {
       order: orderObj,
       items: items.map((item) => item.toObject<OrderItemDocument>()),
@@ -153,13 +168,23 @@ export class OrderService {
   public async getAllOrders(
     page: number = 1,
     limit: number = 10,
-    status?: OrderStatus
+    status?: OrderStatus,
+    customerPhone?: string
   ): Promise<{
     orders: OrderDocument[];
     totalCount: number;
     totalPages: number;
   }> {
-    const query = status ? { status } : {};
+    const query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (customerPhone) {
+      query.customerPhone = { $regex: customerPhone, $options: "i" }; // hỗ trợ tìm gần đúng, không phân biệt hoa thường
+    }
+
     const skip = (page - 1) * limit;
 
     const [orders, totalCount] = await Promise.all([
@@ -177,14 +202,10 @@ export class OrderService {
   }
 
   public async updateOrderStatus(
-    orderId: string | Types.ObjectId | number,
+    orderId: string | Types.ObjectId,
     status: OrderStatus
   ): Promise<OrderDocument> {
-    // Find by id or _id based on type
-    const order =
-      typeof orderId === "string"
-        ? await Order.findOne({ orderId: orderId })
-        : await Order.findById(orderId);
+    const order = await Order.findById(orderId);
 
     if (!order) {
       throw new HttpException(404, "Order not found");
@@ -192,44 +213,48 @@ export class OrderService {
 
     const orderObj = order.toObject<OrderDocument>();
 
-    // Handle cancellation logic
+    // Nếu đơn hàng bị huỷ, khôi phục tồn kho
     if (status === "cancelled" && orderObj.status !== "cancelled") {
-      // Restore product stock
-      const orderItems = await OrderItem.find({ orderId: orderObj.id });
+      const orderItems = await OrderItem.find({ orderId: orderObj._id });
 
       await Promise.all(
         orderItems.map(async (item) => {
           const itemObj = item.toObject<OrderItemDocument>();
-          await Product.findOneAndUpdate(
-            { id: itemObj.productId },
-            { $inc: { stock: itemObj.quantity } }
-          );
+          await Product.findByIdAndUpdate(itemObj.productId, {
+            $inc: { stock: itemObj.quantity },
+          });
         })
       );
     }
 
-    // Update by numeric id if orderId is a number
-    const updatedOrder =
-      typeof orderId === "string"
-        ? await Order.findOneAndUpdate(
-            { orderId: orderId },
-            {
-              status,
-              updatedAt: new Date().toISOString(),
-            },
-            { new: true }
-          )
-        : await Order.findByIdAndUpdate(
-            orderId,
-            {
-              status,
-              updatedAt: new Date().toISOString(),
-            },
-            { new: true }
-          );
+    // Chuẩn bị object cập nhật
+    const updateFields: Partial<OrderDocument> = { status };
+
+    const isBankTransferAndPaid =
+      orderObj.paymentMethod === "bank_transfer" &&
+      orderObj.paymentStatus === "paid";
+
+    // Nếu không phải thanh toán chuyển khoản đã thanh toán thì mới cập nhật paymentStatus
+    if (!isBankTransferAndPaid) {
+      switch (status) {
+        case "delivered":
+          updateFields.paymentStatus = "paid";
+          break;
+        case "cancelled":
+          updateFields.paymentStatus = "failed";
+          break;
+        default:
+          updateFields.paymentStatus = "pending";
+      }
+    }
+
+    // Cập nhật đơn hàng
+    const updatedOrder = await Order.findByIdAndUpdate(orderId, updateFields, {
+      new: true,
+    });
 
     if (!updatedOrder) {
-      throw new HttpException(404, "Order not found");
+      throw new HttpException(500, "Failed to update order");
     }
 
     return updatedOrder.toObject<OrderDocument>();
