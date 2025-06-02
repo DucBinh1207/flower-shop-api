@@ -52,7 +52,7 @@ export class PaymentService {
         description: `Pet Shop - Payment for order #${orderId}`, // Mô tả đơn hàng với orderId
         bank_code: "",
         callback_url:
-          "https://flower-shop-api.onrender.com/api/v1/orders/callback",
+          "https://flower-shop-api-pay0.onrender.com/api/v1/orders/callback",
       };
 
       const data =
